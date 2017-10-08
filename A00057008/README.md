@@ -1,8 +1,8 @@
 ### Examen 1
 **Universidad ICESI**  
 **Curso:** Sistemas Operativos  
-**Nombre:** Sergio Ospina Abonia 
-**Código:** A00057008
+**Nombre:** Sergio Ospina Abonia  
+**Código:** A00057008  
 **Tema:** Comandos de Linux, Virtualización  
 **Correo:** aboniasergio23@gmail.com
 
