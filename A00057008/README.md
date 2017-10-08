@@ -49,3 +49,33 @@ Para dar solución a este reto primero creamos el archivo .txt y luego insertamo
 Para dar solución a este reto primero creamos el archivo .txt y luego insertamos líneas de texto con palabras separadas con igual número de ',' en todas las líneas. El comando column ordena un archivo por columnas, -s indica que las columnas se encuentran separadas por ','
 
 
+*** Realice un script que cumpla las condiciones que se describen a continuación. Presente capturas de pantalla relevantes como evidencias del funcionamiento.
+
+* El usuario gutenberg debe existir en el sistema operativo  
+ 
+Primero creamos el usuario gutenberg (adduser ...) y comprobamos que haya sido creado con éxito
+
+![GitHub Logo2](imagenes/user_gutenberg.PNG)
+
+Acto seguido creamos un script en un nuevo directorio llamado "mybooks". El script se llamará scriptDownload. Obtenemos un libro aleatorio del 1 al 5 y con el comando wget lo obtenemos de la dirección URL. con -O agregamos la descarga al directorio mybooks.
+
+
+![GitHub Logo2](imagenes/script_download.PNG)
+
+Comprobamos que el script ejecuta de manera correcta
+
+![GitHub Logo2](imagenes/run_script.PNG)
+
+Modificamos el archivo crontab por medio del comando "crontab -e".
+
+  *(min 0-59) *(hour 0-23) *(day 1-31) *(month 1-12) *(dayweek 0-7) username(gutenberg) scriptaddress
+
+![GitHub Logo2](imagenes/crontab.PNG)
+
+Luego comprobamos que el archivo se sobreescriba cada 5 minutos
+
+![GitHub Logo2](imagenes/five_minutes.PNG)
+
+
+
+
