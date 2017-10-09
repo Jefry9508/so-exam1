@@ -49,7 +49,7 @@ Para dar solución a este reto primero creamos el archivo .txt y luego insertamo
 Para dar solución a este reto primero creamos el archivo .txt y luego insertamos líneas de texto con palabras separadas con igual número de ',' en todas las líneas. El comando column ordena un archivo por columnas, -s indica que las columnas se encuentran separadas por ','
 
 
-*** Realice un script que cumpla las condiciones que se describen a continuación. Presente capturas de pantalla relevantes como evidencias del funcionamiento.
+# Realice un script que cumpla las condiciones que se describen a continuación. Presente capturas de pantalla relevantes como evidencias del funcionamiento.
 
 * El usuario gutenberg debe existir en el sistema operativo  
  
@@ -75,6 +75,120 @@ Modificamos el archivo crontab por medio del comando "crontab -e".
 Luego comprobamos que el archivo se sobreescriba cada 5 minutos
 
 ![GitHub Logo2](imagenes/five_minutes.PNG)
+
+
+# Describa el funcionamiento del código fuente rickroll.c del repositorio de github https://github.com/jvns/kernel-module-fun. Muestre el funcionamiento al compilar el código y cargarlo como un módulo del kernel a través de un video que deberá cargar en Youtube e incluir el enlace en el informe
+
+#include <linux/module.h>    
+#include <linux/kernel.h>    
+#include <linux/init.h>      
+#include <linux/fcntl.h> 
+#include <linux/fs.h> 
+
+Definición de los include necesarios para que el código funcione
+
+static char *rickroll_filename = "/home/bork/media/music/Rick Astley - Never Gonna Give You Up.mp3";
+module_param(rickroll_filename, charp, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+MODULE_PARM_DESC(rickroll_filename, "The location of the rick roll file");
+
+Definición de la ubicación del archivo rickroll.mp3 en una variable tipo char.
+Definición del parametro de modulo con la variable de ubicación y paso de permisos de escritura y lectura.
+Definición de la descripción del parametro del modulo
+
+#define DISABLE_WRITE_PROTECTION (write_cr0(read_cr0() & (~ 0x10000)))
+#define ENABLE_WRITE_PROTECTION (write_cr0(read_cr0() | 0x10000))
+
+Se definen constantes de modificación a los registros del sitema operativo
+
+static unsigned long **find_sys_call_table(void);
+asmlinkage long rickroll_open(const char __user *filename, int flags, umode_t mode);
+asmlinkage long (*original_sys_open)(const char __user *, int, umode_t);
+asmlinkage unsigned long **sys_call_table;
+
+Definición de variables de posición de la tabla de sys_calls, el rickroll_open, la posición original de la tabla de syscalls
+
+static int __init rickroll_init(void)
+{
+    if(!rickroll_filename) {
+       printk(KERN_ERR "No rick roll filename given.");
+      return -EINVAL;  /* invalid argument */
+    }
+
+    sys_call_table = find_sys_call_table();
+
+    if(!sys_call_table) {
+       printk(KERN_ERR "Couldn't find sys_call_table.\n");
+       return -EPERM;  /* operation not permitted; couldn't find general error */
+    }
+    DISABLE_WRITE_PROTECTION;
+    original_sys_open = (void *) sys_call_table[__NR_open];
+    sys_call_table[__NR_open] = (unsigned long *) rickroll_open;
+    ENABLE_WRITE_PROTECTION;
+
+    printk(KERN_INFO "Never gonna give you up!\n");
+    return 0;  /* zero indicates success */
+}
+
+Se valida si los parametros de rickroll_file y la posición de la tabla de sys_calls han sido almacenados de manera correcta, de lo contrario lanza un error.
+
+Si los parametros son validos se procede a desactivar la protección de escritura y se modifica el sys_call open para que sea atentido por rickroll_open, una vez realizado se reactiva la protección de escritura. Retorna 0 si el proceso es exitoso. 
+
+Cuando se abre un archivo se ejecuta nuestro algoritmo.
+
+asmlinkage long rickroll_open(const char __user *filename, int flags, umode_t mode)
+{
+    int len = strlen(filename);
+    if(strcmp(filename + len - 4, ".mp3")) {
+	return (*original_sys_open)(filename, flags, mode);
+    } else {
+	mm_segment_t old_fs;
+	long fd;
+	old_fs = get_fs();
+	set_fs(KERNEL_DS);
+	fd = (*original_sys_open)(rickroll_filename, flags, mode);
+	set_fs(old_fs);
+	return fd;
+    }
+}
+
+El rickroll_open verifica los archivos que sean de tipo .mp3 y los reemplaza  por el archivo rickroll.mp3 y dejar pasar los demas open. Es decir si se pretende abrir cualquier archivo .mp3 sonará la canción de rickroll
+
+static void __exit rickroll_cleanup(void)
+{
+    printk(KERN_INFO "Ok, now we're gonna give you up. Sorry.\n");
+
+    /* Restore the original sys_open in the table */
+    DISABLE_WRITE_PROTECTION;
+    sys_call_table[__NR_open] = (unsigned long *) original_sys_open;
+    ENABLE_WRITE_PROTECTION;
+}
+
+Se encarga de limpiar y dejar la sys_call_table en su estado original, es decir que pueda reproducir cualquier mp3 de manera normal.
+
+static unsigned long **find_sys_call_table() {
+    unsigned long offset;
+    unsigned long **sct;
+    for(offset = PAGE_OFFSET; offset < ULLONG_MAX; offset += sizeof(void *)) {
+	sct = (unsigned long **) offset;
+
+	if(sct[__NR_close] == (unsigned long *) sys_close)
+	    return sct;
+    }
+    return NULL;
+}
+
+Encuentra la posición de la sys_call table
+
+module_init(rickroll_init);
+module_exit(rickroll_cleanup);
+Definición del init y exit del modulo
+
+
+# References
+
+*https://cmdchallenge.com  
+*https://www.gutenberg.org  
+*https://github.com/jvns/kernel-module-fun/blob/master/rickroll.c  
 
 
 
